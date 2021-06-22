@@ -1,119 +1,56 @@
-import turtle
-import winsound
+from turtle import Screen
+from paddle import Paddle
+from ball import Ball
+from score import Score
 
-wn = turtle.Screen()
-wn.title("Pong Game by Kerin Lowry")
-wn.bgcolor("black")
-wn.setup(width=800, height=600)
-wn.tracer(0)
+RIGHT_PADDLE_POS = 350
+LEFT_PADDLE_POS = -350
 
-#Score
-scoreA = 0
-scoreB = 0
+#screen setup
+screen = Screen()
+screen.setup(width=800, height=600)
+screen.bgcolor("black")
+screen.title("Pong Game - Kerin Lowry")
+screen.tracer(0)
 
-#Paddle A
-paddleA = turtle.Turtle()
-paddleA.speed(0) #set to max possible speed
-paddleA.shape("square")
-paddleA.color("white")
-paddleA.shapesize(stretch_wid=5, stretch_len=1)
-paddleA.penup()
-paddleA.goto(-350,0)
+#create paddles
+right_paddle = Paddle(RIGHT_PADDLE_POS)
+left_paddle = Paddle(LEFT_PADDLE_POS)
 
-#Paddle B
-paddleB = turtle.Turtle()
-paddleB.speed(0) #set to max possible speed
-paddleB.shape("square")
-paddleB.color("white")
-paddleB.shapesize(stretch_wid=5, stretch_len=1)
-paddleB.penup()
-paddleB.goto(350,0)
+#create ball
+ball = Ball()
 
-#Ball
-ball = turtle.Turtle()
-ball.speed(0) #set to max possible speed
-ball.shape("square")
-ball.color("white")
-ball.penup()
-ball.goto(0,0)
-ball.dx = 0.1
-ball.dy = 0.1
+#create score
+score = Score()
 
-#Pen
-pen = turtle.Turtle()
-pen.speed(0)
-pen.color("white")
-pen.penup()
-pen.hideturtle()
-pen.goto(0, 260)
-pen.write("Player A: 0    Player B: 0", align="center", font=("Courier", 24, "normal"))
+#wait for screen events
+screen.listen()
+screen.onkey(right_paddle.go_up, "Up")
+screen.onkey(left_paddle.go_up, "w")
+screen.onkey(right_paddle.go_down, "Down")
+screen.onkey(left_paddle.go_down, "s")
 
-#Functions
-def paddleA_up():
-    y = paddleA.ycor()
-    y += 20
-    paddleA.sety(y)
+#game loop
+game_on = True
+while game_on:
+    screen.update()
+    ball.move()
+    #check collision with top walls
+    if ball.ycor() > 290 or ball.ycor() < -290:
+        ball.bounce_y()
+    #check collison with paddle
+    if ball.distance(right_paddle) < 50 and ball.xcor() > 320 or ball.distance(left_paddle) < 50 and ball.xcor() < -320:
+        ball.bounce_x()
+        #ball.speed_up()
+    #check if a player misses the ball
+    if ball.xcor() > 380:
+        #update player A score with an extra point
+        score.update_score("left")
+        ball.recenter()
+    if ball.xcor() < -380:
+        #update player B score with an extra point
+        score.update_score("right")
+        ball.recenter()
 
-def paddleA_down():
-    y = paddleA.ycor()
-    y -= 20
-    paddleA.sety(y)
-    
-def paddleB_up():
-    y = paddleB.ycor()
-    y += 20
-    paddleB.sety(y)
 
-def paddleB_down():
-    y = paddleB.ycor()
-    y -= 20
-    paddleB.sety(y)
-
-#Keyboard Binding
-wn.listen()
-wn.onkeypress(paddleA_up, "w")
-wn.onkeypress(paddleA_down, "s")
-wn.onkeypress(paddleB_up, "Up")
-wn.onkeypress(paddleB_down, "Down")
-
-#Main Game Loop
-while True:
-    wn.update()
-    #Move the ball
-    ball.setx(ball.xcor() + ball.dx)
-    ball.sety(ball.ycor() + ball.dy)
-    #Border checking
-    if ball.ycor() > 290:
-        ball.sety(290)
-        ball.dy *= -1
-        winsound.PlaySound("bounce.wav", winsound.SND_ASYNC)
-    
-    if ball.ycor() < -290:
-        ball.sety(-290)
-        ball.dy *= -1
-        winsound.PlaySound("bounce.wav", winsound.SND_ASYNC)
-                
-    if ball.xcor() > 390:
-        ball.goto(0, 0)
-        ball.dx *= -1
-        scoreA += 1
-        pen.clear()
-        pen.write("Player A: {}    Player B: {}".format(scoreA, scoreB), align="center", font=("Courier", 24, "normal"))
-        
-    if ball.xcor() < -390:
-        ball.goto(0, 0)
-        ball.dx *= -1
-        scoreB += 1
-        pen.clear()
-        pen.write("Player A: {}    Player B: {}".format(scoreA, scoreB), align="center", font=("Courier", 24, "normal"))
-        
-    #Paddle and ball collisions
-    if (ball.xcor() > 340 and ball.xcor() < 350) and (ball.ycor() < paddleB.ycor() + 40 and ball.ycor() > paddleB.ycor() -40):
-        ball.setx(340)
-        ball.dx *= -1
-        winsound.PlaySound("bounce.wav", winsound.SND_ASYNC)
-        
-    if (ball.xcor() < -340 and ball.xcor() > -350) and (ball.ycor() < paddleA.ycor() + 40 and ball.ycor() > paddleA.ycor() -40):
-        ball.setx(-340)
-        ball.dx *= -1
-        winsound.PlaySound("bounce.wav", winsound.SND_ASYNC)
+screen.exitonclick()
